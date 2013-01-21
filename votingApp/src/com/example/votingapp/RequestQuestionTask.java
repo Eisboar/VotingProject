@@ -46,6 +46,18 @@ public class RequestQuestionTask extends AsyncTask<String, Void, Vector<String>>
 					line = inp.readLine();
 				}
 			}
+			if (args[0].equals("1")){
+				outp.println("sID="+args[1]);
+				outp.println("qID="+"res="+args[2]+args[3]);
+				outp.println("QUIT");
+				
+				String line;
+				line = inp.readLine();
+				while (line!=null){
+					answerLines.add(line);
+					line = inp.readLine();
+				}
+			}
 
 			s.close();
 			return answerLines;

@@ -13,6 +13,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AnalogClock;
@@ -33,7 +34,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
 	/** Called when the activity is first created. */
 	private Scanner scanner = new Scanner(System.in);
-
+	Toast toast;
 	// DATA
 	private final String studentID = "10000";
 
@@ -132,16 +133,16 @@ public class MainActivity extends Activity {
 			// Toast toast = Toast.makeText(MainActivity.this,line , 1);
 			// toast.show();
 			if (!line.startsWith("qID=")) {
-				Toast toast = Toast.makeText(MainActivity.this, "fuuu", 1);
-				toast.show();
+				// Toast toast = Toast.makeText(MainActivity.this, "fuuu", 1);
+				// toast.show();
 				return null;
 			}
 
 			questionSheet.setqID(line.substring(line.indexOf("=") + 1));
 
 			line = it.next();
-			Toast toast = Toast.makeText(MainActivity.this, line, 1);
-			toast.show();
+			// Toast toast = Toast.makeText(MainActivity.this, line, 1);
+			// toast.show();
 			if (!line.startsWith("count="))
 				return null;
 			int count = Integer.parseInt(line.substring(line.indexOf("=") + 1));
@@ -164,9 +165,9 @@ public class MainActivity extends Activity {
 		if (!line.startsWith("q="))
 			return null;
 		question.setQuestionString(line.substring(line.indexOf("=") + 1));
-		Toast toast = Toast.makeText(MainActivity.this,
-				question.getQuestionString(), 1);
-		toast.show();
+		// Toast toast = Toast.makeText(MainActivity.this,
+		// question.getQuestionString(), 1);
+		// toast.show();
 		line = it.next();
 		if (!line.startsWith("count="))
 			return null;
@@ -189,6 +190,8 @@ public class MainActivity extends Activity {
 		// private final View preExisting;
 		private Vector<RadioButton> radioButtons;
 		private QuestionSheet questionSheet;
+		private Button sendAnswers;
+		private Vector<Pair<RadioGroup, Integer>  > choiceFields;
 
 		protected QuestionTab(QuestionSheet questionSheet) {
 			this.questionSheet = questionSheet;
@@ -199,6 +202,7 @@ public class MainActivity extends Activity {
 			LinearLayout linearLayout = new LinearLayout(MainActivity.this);
 			linearLayout.setOrientation(LinearLayout.VERTICAL);
 
+			choiceFields = new Vector<Pair<RadioGroup, Integer>>();
 			for (Question question : questionSheet.getQuestions()) {
 				TextView questionField = new TextView(MainActivity.this);
 				questionField.setText(question.getQuestionString());
@@ -214,67 +218,83 @@ public class MainActivity extends Activity {
 					rb[i] = new RadioButton(MainActivity.this);
 					rb[i].setText(answerString);
 					rb[i].setId(i);
+					Resources res = getResources();
 					rg.addView(rb[i]); // the RadioButtons are added to the
 				}
+				choiceFields.add(new Pair<RadioGroup, Integer>(rg,question.getAnswers()
+						.size()));
 				linearLayout.addView(rg);
 			}
-			Button sendAnswers = new Button(MainActivity.this);
+			sendAnswers = new Button(MainActivity.this);
 			sendAnswers.setText("send");
 			linearLayout.addView(sendAnswers);
-			
+			sendAnswers.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					Vector<String> unparsedCorrection;
+					String[] args = buildAnswers();
+					try {
+						toast = Toast.makeText(MainActivity.this, "ha", 1);
+						unparsedCorrection = new RequestQuestionTask().execute(
+								args).get();
+						for (String line : unparsedCorrection) {
+							question.setText(question.getText().toString()
+									+ "\n" + line);
+						}
+
+						// toast.show();
+					} catch (Exception ee) {
+
+						return;
+						// if we have a problem, simply return null return null;
+					}
+					// Toast toast = Toast.makeText(MainActivity.this,"hio" ,
+					// 1);
+					// toast.show();
+					int i = 0;
+					for (Pair<RadioGroup, Integer> p : choiceFields) {
+						int radioButtonID = p.first.getCheckedRadioButtonId();
+						// toast = Toast.makeText(MainActivity.this,
+						// Integer.toString(radioButtonID), 1);
+						// toast.show();
+						if (radioButtonID != -1) {
+							if (radioButtonID != Integer
+									.parseInt(unparsedCorrection.elementAt(i))) {
+								RadioButton rb = (RadioButton) p.first
+										.getChildAt(radioButtonID);
+								rb.setBackgroundColor(Color.RED);
+							}
+						}
+						RadioButton rb = (RadioButton) p.first
+								.getChildAt(Integer
+										.parseInt(unparsedCorrection.elementAt(i)));
+						rb.setBackgroundColor(Color.GREEN);
+						i++;
+						for (int j=0; j<p.second; j++){
+							RadioButton radiobutton = (RadioButton) p.first
+									.getChildAt(j);
+							radiobutton.setEnabled(false);
+						}
+					}
+
+				}
+			});
+
 			sv.addView(linearLayout);
-
-			// ListView lv = new ListView(MainActivity.this);
-			// ScrollView sv = new ScrollView(MainActivity.this);
-			// Vector<TextView> vec = new Vector<TextView>();
-			// vec.add(new TextView(MainActivity.this));
-			// vec.add(new TextView(MainActivity.this));
-			// int i=0;
-			// for (TextView tv : vec){
-			// tv.setText("lala");
-			// tv.setId(i);
-			// RelativeLayout.LayoutParams lp = new
-			// RelativeLayout.LayoutParams(
-			// RelativeLayout.LayoutParams.WRAP_CONTENT,
-			// RelativeLayout.LayoutParams.FILL_PARENT);
-			// lp.addRule(RelativeLayout.RIGHT_OF, tv1.getId());
-			// sv.addView(tv,i++);
-			// }
-			// sv.addView(lv);
-
-			// TextView tv1 = new TextView(MainActivity.this);
-			// TextView tv2 = new TextView(MainActivity.this);
-			// tv1.setText("lala");
-			// tv2.setText("lala");
-			// RelativeLayout.LayoutParams lp = new
-			// RelativeLayout.LayoutParams(
-			// RelativeLayout.LayoutParams.WRAP_CONTENT,
-			// RelativeLayout.LayoutParams.FILL_PARENT);
-			// lp.addRule(RelativeLayout.BELOW, tv1.getId());
-			// linearLayout.addView(tv1);
-			// //sv.addView(tv2,lp);
-
-			// }
-			// linearLayout.addView(rg);
-			// sv.addView(linearLayout);
-			// // sv.addView(rg);
-			// TextView questionField = new TextView(MainActivity.this);
-			// questionField.setText("fdf");
-			// sv.addView(questionField);
-			// questionField = new TextView(MainActivity.this);
-			// questionField.setText("fdf");
-			// sv.addView(questionField);
-
-			// questionField = new TextView(MainActivity.this);
-			// questionField.setText("asd");
-			// sv.addView(questionField);
-			//
-			//
-
 			return sv;
-			// ViewPager vp = new ViewPager(MainActivity.this);
-			// vp.addView(rg);
-			// return vp;
 		}
+
+		private String[] buildAnswers() {
+			String results = "";
+			for (Pair<RadioGroup, Integer> p : choiceFields) {
+				int radioButtonID = p.first.getCheckedRadioButtonId();
+				results += "\n" + Integer.toString(radioButtonID);
+			}
+			String[] args = { "1", studentID, questionSheet.getqID(), results };
+			return args;
+		}
+
 	}
+
 }
